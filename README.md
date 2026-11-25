@@ -24,6 +24,8 @@ python demo.py              # writes out/report.html and out/summary.json
 python -m pytest -q         # 6 checks
 ```
 
+Or without installing anything: open **Actions → tests → Run workflow** on GitHub. When the run finishes, download **demo-report** from the run page and open `report.html`.
+
 ## Layout
 
 ```
