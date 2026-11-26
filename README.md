@@ -17,11 +17,13 @@ All data is synthetic. Nothing here comes from a client.
 
 ## Run it
 
-Python 3.10 or later. No third-party packages are needed for the demo; the tests use pytest.
+Python 3.10 or later. No third-party packages are needed for the demo; the tests use pytest and
+the code style is checked with ruff (settings in `pyproject.toml`).
 
 ```
 python demo.py              # writes out/report.html and out/summary.json
 python -m pytest -q         # 6 checks
+ruff check . && ruff format --check .
 ```
 
 Or without installing anything: open **Actions → tests → Run workflow** on GitHub. When the run finishes, download **demo-report** from the run page and open `report.html`.
@@ -34,6 +36,7 @@ lineage/sample.py       synthetic extracts for a fictional insurer's own-funds r
 powercenter/parser.py   minimal PowerCenter XML export reader
 samples/powercenter/    synthetic repository export
 demo.py                 runs both parts and writes the HTML report
+pyproject.toml          pytest and ruff settings
 tests/                  checks on parsing, column-level tracing, breaks and reconciliation
 docs/                   screenshots, AI working method, agent governance model
 ```

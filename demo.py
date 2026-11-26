@@ -6,6 +6,7 @@ Part 1 traces every cell of a regulatory report back through Azure SQL, Unity Ca
 Data Factory to its source systems, then reconciles reported figures against the warehouse.
 Part 2 reads a PowerCenter repository export and shows mappings, lineage and unscheduled objects.
 """
+
 from __future__ import annotations
 
 import html
@@ -21,13 +22,25 @@ ROOT = Path(__file__).parent
 
 
 def lineage_part(work: Path) -> dict:
+    """Part 1: write the synthetic extracts, build the graph and trace every report cell.
+
+    Each cell gets its source systems, the storage layers on the way, any breaks, loads older than
+    the reporting date (stale) and a reconciliation of the reported figure against the warehouse.
+    """
     sample.write(work)
-    edges = (lg.parse_adf(work / "adf_pipelines.json") + lg.parse_uc_lineage(work / "uc_table_lineage.csv")
-             + lg.parse_sql_views(work / "azure_sql_views.sql", "sql:azure/s2rpt."))
+    edges = (
+        lg.parse_adf(work / "adf_pipelines.json")
+        + lg.parse_uc_lineage(work / "uc_table_lineage.csv")
+        + lg.parse_sql_views(work / "azure_sql_views.sql", "sql:azure/s2rpt.")
+    )
     mapping = lg.parse_mapping(work / "report_mapping.csv", "sql:azure/")
-    edges += [dict(src=m["view"], dst=m["cell"], via=f"mapping: {m['column']}", source="Reporting", when="") for m in mapping]
-    col_edges = (lg.parse_uc_column_lineage(work / "uc_column_lineage.csv")
-                 + lg.parse_sql_view_columns(work / "azure_sql_views.sql", "sql:azure/s2rpt."))
+    edges += [
+        dict(src=m["view"], dst=m["cell"], via=f"mapping: {m['column']}", source="Reporting", when="")
+        for m in mapping
+    ]
+    col_edges = lg.parse_uc_column_lineage(work / "uc_column_lineage.csv") + lg.parse_sql_view_columns(
+        work / "azure_sql_views.sql", "sql:azure/s2rpt."
+    )
     g = lg.Graph(edges, sample.SOURCES, col_edges)
 
     cells = []
@@ -35,33 +48,55 @@ def lineage_part(work: Path) -> dict:
         nodes, used, breaks = g.trace(f"{m['view']}#{m['column']}")
         stale = sorted({e["when"][:10] for e in used if e["when"] and e["when"][:10] < sample.REPORT_DATE})
         rep, dw = sample.REPORTED[m["row"]], sample.WAREHOUSE[m["row"]]
-        cells.append(dict(
-            cell=f"{m['table']} {m['row']}", column=m["column"],
-            sources=sorted(n for n in nodes if n in sample.SOURCES),
-            storages=sorted({lg.storage_of(n) for n in nodes} - {"Report"}, key=lambda s: lg.TIER.get(s, 9)),
-            breaks=sorted(set(breaks)), stale=stale, reported=rep, warehouse=dw,
-            status="OK" if abs(rep - dw) < 0.05 else "DIFFERENCE"))
+        cells.append(
+            dict(
+                cell=f"{m['table']} {m['row']}",
+                column=m["column"],
+                sources=sorted(n for n in nodes if n in sample.SOURCES),
+                storages=sorted(
+                    {lg.storage_of(n) for n in nodes} - {"Report"}, key=lambda s: lg.TIER.get(s, 9)
+                ),
+                breaks=sorted(set(breaks)),
+                stale=stale,
+                reported=rep,
+                warehouse=dw,
+                status="OK" if abs(rep - dw) < 0.05 else "DIFFERENCE",
+            )
+        )
     return dict(edges=edges, cells=cells)
 
 
 def powercenter_part() -> dict:
+    """Part 2: read the sample PowerCenter export and summarise mappings, workflows and lineage."""
     maps, flows = pc.read_export(ROOT / "samples" / "powercenter" / "REP_DEMO_export.xml")
     edges = pc.lineage_edges(maps)
     report_target = "REG_LCR"
     return dict(
-        mappings=[dict(name=m.name, sources=m.sources, targets=m.targets, steps=m.logic_steps, size=m.size) for m in maps],
+        mappings=[
+            dict(name=m.name, sources=m.sources, targets=m.targets, steps=m.logic_steps, size=m.size)
+            for m in maps
+        ],
         workflows=[dict(name=w.name, sessions=len(w.sessions)) for w in flows],
         upstream={report_target: pc.upstream(edges, report_target)},
-        unscheduled=pc.unscheduled(maps, flows))
+        unscheduled=pc.unscheduled(maps, flows),
+    )
 
 
 # --------------------------------------------------------------------------- HTML
+# Columns of the lineage picture, left to right. Unity Catalog nodes are split into the
+# bronze/silver/gold schemas, Azure SQL into tables and views.
 LAYERS = ["Sources", "ADLS Gen2", "Bronze", "Silver", "Gold", "Azure SQL", "View", "Report"]
-ABBR = {"SQL Server (on-prem)": "On-prem SQL", "SFTP": "SFTP", "ADLS Gen2": "ADLS",
-        "Unity Catalog (Delta)": "Unity Catalog", "Azure SQL Database": "Azure SQL"}
+ABBR = {
+    "SQL Server (on-prem)": "On-prem SQL",
+    "SFTP": "SFTP",
+    "ADLS Gen2": "ADLS",
+    "Unity Catalog (Delta)": "Unity Catalog",
+    "Azure SQL Database": "Azure SQL",
+}
 
 
 def layer(n: str) -> int:
+    """Column index of a node in the lineage picture (see LAYERS)."""
     st = lg.storage_of(n)
     if st in ("SQL Server (on-prem)", "SFTP"):
         return 0
@@ -75,6 +110,7 @@ def layer(n: str) -> int:
 
 
 def label(n: str) -> str:
+    """Short display name for a node: the last meaningful part of its full name."""
     if n.startswith("report:"):
         return n.split("/", 1)[1].replace("/", " ")
     if "://" in n:
@@ -85,6 +121,7 @@ def label(n: str) -> str:
 
 
 def path_text(storages: list[str]) -> str:
+    """Storage path as text, e.g. "On-prem SQL + SFTP → ADLS → Unity Catalog → Azure SQL"."""
     first = [ABBR.get(x, x) for x in storages if lg.TIER.get(x) == 0]
     rest = [ABBR.get(x, x) for x in storages if lg.TIER.get(x) != 0]
     return " → ".join(([" + ".join(first)] if first else []) + rest)
@@ -113,30 +150,40 @@ def svg_chain(edges: list[dict]) -> str:
         out.append(f'<path d="M{x1},{y1 + 11} C{mx},{y1 + 11} {mx},{y2 + 11} {x2},{y2 + 11}" class="edge"/>')
     for n, (x, y) in pos.items():
         cls = "src" if n in sample.SOURCES else "brk" if "/manual/" in n else "node"
-        out.append(f'<rect x="{x}" y="{y}" width="{boxw}" height="22" rx="5" class="{cls}"><title>{html.escape(n)}</title></rect>'
-                   f'<text x="{x + 6}" y="{y + 15}" class="lb">{html.escape(label(n)[:22])}</text>')
+        out.append(
+            f'<rect x="{x}" y="{y}" width="{boxw}" height="22" rx="5" class="{cls}"><title>{html.escape(n)}</title></rect>'
+            f'<text x="{x + 6}" y="{y + 15}" class="lb">{html.escape(label(n)[:22])}</text>'
+        )
     out.append("</svg>")
     return "".join(out)
 
 
 def write_html(path: Path, lin: dict, pcd: dict, summary: dict) -> None:
+    """Write the self-contained HTML report (no external CSS, fonts or scripts)."""
     e = html.escape
     rows = "".join(
-        f"<tr><td title=\"{e(c['column'])}\">{e(c['cell'])}</td><td>{e(', '.join(x.rstrip('/').split('/')[-1].replace('.dbo.', '.') for x in c['sources']))}</td>"
+        f'<tr><td title="{e(c["column"])}">{e(c["cell"])}</td><td>{e(", ".join(x.rstrip("/").split("/")[-1].replace(".dbo.", ".") for x in c["sources"]))}</td>'
         f"<td class=nw>{e(path_text(c['storages']))}</td>"
         f"<td>{'<span class=bad>' + e(', '.join(b.split('/')[-1] for b in c['breaks'])) + '</span>' if c['breaks'] else ''}"
         f"{'<span class=warn>source loaded ' + e(c['stale'][0]) + '</span>' if c['stale'] else ''}</td>"
         f"<td class=n>{c['reported']:.1f}</td><td class=n>{c['warehouse']:.1f}</td>"
-        f"<td><span class={'ok' if c['status'] == 'OK' else 'bad'}>{c['status']}</span></td></tr>" for c in lin["cells"])
+        f"<td><span class={'ok' if c['status'] == 'OK' else 'bad'}>{c['status']}</span></td></tr>"
+        for c in lin["cells"]
+    )
     mrows = "".join(
         f"<tr><td><code>{e(m['name'])}</code></td><td>{e(', '.join(m['sources']))}</td><td>{e(', '.join(m['targets']))}</td>"
         f"<td class=n>{m['steps']}</td><td>{m['size']}</td><td>{'not scheduled' if m['name'] in pcd['unscheduled'] else ''}</td></tr>"
-        for m in pcd["mappings"])
-    tiles = "".join(f'<div class="tile"><b>{v}</b><span>{k}</span></div>' for k, v in (
-        ("report cells traced to source", f"{summary['cells_traced']} / {summary['cells']}"),
-        ("lineage break", len(summary["breaks"])),
-        ("reconciliation differences", summary["differences"]),
-        ("PowerCenter mappings not scheduled", len(pcd["unscheduled"]))))
+        for m in pcd["mappings"]
+    )
+    tiles = "".join(
+        f'<div class="tile"><b>{v}</b><span>{k}</span></div>'
+        for k, v in (
+            ("report cells traced to source", f"{summary['cells_traced']} / {summary['cells']}"),
+            ("lineage break", len(summary["breaks"])),
+            ("reconciliation differences", summary["differences"]),
+            ("PowerCenter mappings not scheduled", len(pcd["unscheduled"])),
+        )
+    )
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Regulatory lineage demo</title><style>
 :root{{--bg:#f7f7f5;--card:#fff;--ink:#1d2327;--mut:#5b6670;--line:#e3e5e8;--acc:#1f5fa8;--ok:#2e7d4f;--bad:#b3261e;--warn:#9a6700}}
@@ -155,26 +202,30 @@ svg{{width:100%;height:auto}}.edge{{fill:none;stroke:var(--mut);stroke-opacity:.
 <p class="mut">All data is synthetic. Part 1: an own-funds report traced through Azure. Part 2: a PowerCenter repository export.</p>
 <div class="tiles">{tiles}</div>
 <h2>1. Report cell → source system</h2>
-<div class="card">{svg_chain(lin['edges'])}<p class="mut">Blue = declared source system. Red = break: data that enters the lake with no pipeline behind it.</p></div>
+<div class="card">{svg_chain(lin["edges"])}<p class="mut">Blue = declared source system. Red = break: data that enters the lake with no pipeline behind it.</p></div>
 <div class="card" style="margin-top:12px"><table><thead><tr><th>Report cell</th><th>Source systems</th><th>Storage path</th><th>Findings</th><th class=n>Reported, M€</th><th class=n>Warehouse, M€</th><th>Status</th></tr></thead><tbody>{rows}</tbody></table>
 <p class="mut">The SCR difference is explained by the lineage: the actuarial file was loaded on 29 December, two days before the reporting date.</p></div>
 <h2>2. PowerCenter export</h2>
 <div class="card"><table><thead><tr><th>Mapping</th><th>Sources</th><th>Targets</th><th class=n>Logic steps</th><th>Size</th><th></th></tr></thead><tbody>{mrows}</tbody></table>
-<p class="mut">Tables upstream of <code>REG_LCR</code>: {e(', '.join(sorted(pcd['upstream']['REG_LCR'])))}</p></div>
+<p class="mut">Tables upstream of <code>REG_LCR</code>: {e(", ".join(sorted(pcd["upstream"]["REG_LCR"])))}</p></div>
 </main></body></html>"""
     path.write_text(page, encoding="utf-8")
 
 
 def main(out: Path) -> dict:
+    """Run both parts, write ``summary.json`` and ``report.html`` into ``out`` and return the summary."""
     out.mkdir(parents=True, exist_ok=True)
     lin = lineage_part(out / "extracts")
     pcd = powercenter_part()
     summary = dict(
-        cells=len(lin["cells"]), cells_traced=sum(bool(c["sources"]) for c in lin["cells"]),
+        cells=len(lin["cells"]),
+        cells_traced=sum(bool(c["sources"]) for c in lin["cells"]),
         breaks=sorted({b for c in lin["cells"] for b in c["breaks"]}),
         stale_cells=[c["cell"] for c in lin["cells"] if c["stale"]],
         differences=sum(c["status"] != "OK" for c in lin["cells"]),
-        mappings=len(pcd["mappings"]), unscheduled=pcd["unscheduled"])
+        mappings=len(pcd["mappings"]),
+        unscheduled=pcd["unscheduled"],
+    )
     (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     write_html(out / "report.html", lin, pcd, summary)
     return summary

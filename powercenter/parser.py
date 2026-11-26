@@ -7,6 +7,7 @@ It also lists workflows and the sessions they run.
 This is a reduced, illustrative version. Classification rules, effort estimates and the SQL
 override analysis used in client work are not included.
 """
+
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
@@ -14,12 +15,19 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-PASSIVE_IO = {"Source Definition", "Target Definition", "Source Qualifier",
-              "Input Transformation", "Output Transformation"}
+PASSIVE_IO = {
+    "Source Definition",
+    "Target Definition",
+    "Source Qualifier",
+    "Input Transformation",
+    "Output Transformation",
+}
 
 
 @dataclass
 class Mapping:
+    """One mapping: the tables it reads and writes, and how many of each transformation type it has."""
+
     folder: str
     name: str
     sources: list[str] = field(default_factory=list)
@@ -40,17 +48,26 @@ class Mapping:
 
 @dataclass
 class Workflow:
+    """One workflow and the sessions it runs, as (session name, mapping name) pairs."""
+
     folder: str
     name: str
-    sessions: list[tuple[str, str]] = field(default_factory=list)   # (session, mapping)
+    sessions: list[tuple[str, str]] = field(default_factory=list)  # (session, mapping)
 
 
 def _parse(path: Path) -> ET.Element:
+    """Parse the export file and return the root element."""
     # Exports reference powrmart.dtd; ElementTree ignores the DOCTYPE and does not fetch it.
     return ET.parse(path).getroot()
 
 
 def read_export(path: Path) -> tuple[list[Mapping], list[Workflow]]:
+    """Read mappings and workflows from every FOLDER in a repository export.
+
+    Sources and targets are taken from the mapping's Source/Target Definition instances.
+    A workflow's sessions are linked to mappings through the folder's SESSION elements,
+    because TASKINSTANCE only names the session, not the mapping it runs.
+    """
     root = _parse(Path(path))
     mappings, workflows = [], []
     for folder in root.iter("FOLDER"):
