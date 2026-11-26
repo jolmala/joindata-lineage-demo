@@ -11,6 +11,7 @@ RECORD = ROOT / "migration" / "m_LOAD_DIM_EMPLOYEE.md"
 
 
 def _mapping():
+    """The HR mapping, with every mapping and workflow of the export for the scheduling checks."""
     maps, flows = pc.read_export(EXPORT)
     return {m.name: m for m in maps}["m_LOAD_DIM_EMPLOYEE"], maps, flows
 

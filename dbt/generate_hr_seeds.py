@@ -85,7 +85,7 @@ JOBS = ["J110", "J120", "J210", "J220", "J310", "J400"]
 
 def employees(rng: random.Random) -> list[dict]:
     """150 employees with the planted problems listed in the module docstring."""
-    codes = ["FIN", "HRM", "ITD", "SAL", "MKT", "OPS", "OPS", "LOG", "LOG", "RND"]
+    codes = ["FIN", "HRM", "ITD", "SAL", "MKT", "OPS", "OPS", "LOG", "LOG", "RND"]  # repeats weight the draw
     rows = []
     for i in range(150):
         emp_id = 10001 + i
@@ -181,6 +181,7 @@ def write(name: str, rows: list[dict]) -> None:
 
 
 def main() -> None:
+    """Write the three HR seed files and print how many rows the legacy target holds."""
     rng = random.Random(2027)
     emps = employees(rng)
     cols = ["dept_code", "dept_name", "cost_center", "active_flag", "valid_from"]

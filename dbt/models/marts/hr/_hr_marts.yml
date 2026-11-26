@@ -19,10 +19,26 @@ models:
       - name: emp_id
         description: Employee number; the key. The legacy surrogate key EMP_KEY is not carried over (D6).
         data_tests: [unique, not_null]
+      - name: full_name
+        description: Last name and first name separated by a comma, the format the legacy reports use.
+      - name: dept_code
+        description: Department code.
       - name: dept_name
         description: Department name; UNKNOWN when the employee's department has no row.
       - name: cost_center
         description: Cost centre; 9999 when the department is unknown.
+      - name: job_code
+        description: Job code.
+      - name: employment_type
+        description: P = permanent, F = fixed-term. External contractors (X) are not in this table.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["P", "F"]
+      - name: hire_date
+        description: First day of employment.
+      - name: term_date
+        description: Last day of employment; empty while the employment continues.
       - name: is_active
         description: Y when the employee has not left by the reporting date.
         data_tests:

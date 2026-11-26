@@ -9,6 +9,8 @@ models:
       - name: dept_code
         description: Department code.
         data_tests: [unique, not_null]
+      - name: dept_name
+        description: Department name.
       - name: cost_center
         description: Cost centre of the department.
         data_tests: [not_null]
