@@ -28,6 +28,44 @@ ruff check . && ruff format --check .
 
 Or without installing anything: open **Actions → tests → Run workflow** on GitHub. When the run finishes, download **demo-report** from the run page and open `report.html`.
 
+## dbt example: from raw orders to an answer
+
+`dbt/` is a small dbt project on DuckDB with synthetic orders of a fictional tool wholesaler. It answers the
+question *"List countries by sales, and where were the most drills sold, in units and euros?"* and shows
+the pieces that make such an answer trustworthy:
+
+| Piece | Where |
+| --- | --- |
+| Layers: staging → intermediate → marts | `dbt/models/` |
+| Tests: unique, not_null, relationships, accepted_values | `_staging.yml`, `_intermediate.yml`, `_marts.yml` |
+| Reconciliation test: the mart total equals the fact table, to the cent | `dbt/tests/assert_mart_reconciles_to_fact.sql` |
+| Currency rule written down once: euros at the order-date rate | `int_order_lines_eur.sql`, mart description |
+| Incremental fact table (reloads the last 7 days of orders) | `fct_order_lines.sql` |
+| Customer history (SCD type 2) | `dbt/snapshots/snap_customers.sql` |
+| Metadata for natural-language querying: synonyms, example questions, owner, personal-data tag | `meta:` in `_marts.yml` and `_staging.yml` |
+| A planted problem: four order lines refer to a product that does not exist | reported as a warning by the relationships test |
+
+Run it (Python 3.10+):
+
+```
+pip install dbt-duckdb
+cd dbt
+python generate_seeds.py          # optional: the CSVs are already in seeds/
+dbt build --profiles-dir .        # seeds, models, snapshot and tests
+```
+
+The **dbt** job in GitHub Actions runs the same steps, prints the answer and uploads the dbt documentation
+as the **dbt-docs** artifact. Expected answer, delivered orders in euros:
+
+| Country | Drills, units | Drills, EUR | All sales, EUR |
+| --- | ---: | ---: | ---: |
+| Finland | 1 883 | 334 067 | 747 530 |
+| Germany | 904 | 160 176 | 426 721 |
+| Netherlands | 746 | 139 054 | 261 013 |
+| Sweden | 467 | 82 670 | 191 520 |
+| United States | 482 | 81 299 | 210 568 |
+| Estonia | 176 | 29 274 | 76 804 |
+
 ## Layout
 
 ```
@@ -37,6 +75,7 @@ powercenter/parser.py   minimal PowerCenter XML export reader
 samples/powercenter/    synthetic repository export
 demo.py                 runs both parts and writes the HTML report
 pyproject.toml          pytest and ruff settings
+dbt/                    dbt project: synthetic orders, models, tests, snapshot
 tests/                  checks on parsing, column-level tracing, breaks and reconciliation
 docs/                   screenshots, AI working method, agent governance model
 ```

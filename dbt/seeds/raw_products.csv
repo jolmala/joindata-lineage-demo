@@ -1,0 +1,11 @@
+product_id,product_name,group_code,unit
+101,Cordless drill 18V,POR,pcs
+102,Hammer drill 800W,POR,pcs
+103,Impact driver 18V,POR,pcs
+104,Drill press 550W,POR,pcs
+201,Circular saw 1400W,SAH,pcs
+202,Jigsaw 650W,SAH,pcs
+203,Mitre saw 1800W,SAH,pcs
+301,Angle grinder 125mm,HIO,pcs
+302,Orbital sander,HIO,pcs
+303,"Sanding discs, 50",HIO,box

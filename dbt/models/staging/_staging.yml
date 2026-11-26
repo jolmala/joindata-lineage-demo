@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_countries
+    description: Countries with ISO 3166-1 alpha-2 codes and sales region.
+    columns:
+      - name: country_code
+        description: ISO 3166-1 alpha-2 country code.
+        data_tests: [unique, not_null]
+  - name: stg_product_groups
+    columns:
+      - name: group_code
+        description: "Product group code, e.g. POR = drills."
+        data_tests: [unique, not_null]
+  - name: stg_products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: group_code
+        data_tests:
+          - relationships:
+              to: ref('stg_product_groups')
+              field: group_code
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: email
+        description: Buyer contact e-mail (synthetic).
+        meta:
+          sensitivity: personal_data
+      - name: country_code
+        data_tests:
+          - relationships:
+              to: ref('stg_countries')
+              field: country_code
+  - name: stg_orders
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: status
+        description: "T = delivered, A = open, P = cancelled."
+        data_tests:
+          - accepted_values:
+              values: ["T", "A", "P"]
+      - name: currency
+        data_tests:
+          - accepted_values:
+              values: ["EUR", "SEK", "USD"]
+  - name: stg_order_lines
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+  - name: stg_fx_rates
+    description: Daily rates; eur_per_unit = euros for one unit of the currency.

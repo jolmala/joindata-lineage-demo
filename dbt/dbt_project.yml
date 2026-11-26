@@ -1,0 +1,33 @@
+name: joindata_orders
+version: "1.0.0"
+config-version: 2
+profile: joindata_orders
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  joindata_orders:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table
+
+seeds:
+  joindata_orders:
+    raw_customers:
+      +column_types:
+        updated_at: timestamp
+    raw_orders:
+      +column_types:
+        order_date: date
+    raw_fx_rates:
+      +column_types:
+        rate_date: date
+        eur_per_unit: double

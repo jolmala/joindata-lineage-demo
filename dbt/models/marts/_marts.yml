@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: dim_country
+    columns:
+      - name: country_code
+        data_tests: [unique, not_null]
+  - name: dim_customer
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: dim_product
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: fct_order_lines
+    description: One row per order line. Grain = line_id.
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+      - name: product_id
+        description: >
+          Planted problem: four lines refer to product 999, which does not exist.
+          Reported as a warning so the run continues and the gap is visible.
+        data_tests:
+          - relationships:
+              to: ref('dim_product')
+              field: product_id
+              config:
+                severity: warn
+      - name: customer_id
+        data_tests:
+          - relationships:
+              to: ref('dim_customer')
+              field: customer_id
+  - name: mart_sales_by_country
+    description: >
+      Sales by country. Sales = delivered orders (status T), excluding VAT,
+      converted to euros at the rate of the order date.
+    meta:
+      owner: finance
+      synonyms_fi: [myynti, liikevaihto]
+      synonyms_en: [sales, revenue]
+      example_questions:
+        - "Listaa maat myynnin mukaan suuruusjärjestyksessä."
+        - "Missä porakoneita on myyty eniten kappaleina ja euroina?"
+    columns:
+      - name: country_code
+        data_tests: [unique, not_null]
+      - name: sales_eur
+        description: Delivered sales in euros, excluding VAT.
+      - name: drill_units
+        description: Units sold in product group POR (drills).
+      - name: drill_sales_eur
+        description: Drill sales in euros.

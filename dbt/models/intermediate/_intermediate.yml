@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: int_order_lines_eur
+    description: Order lines joined to orders, with the amount in euros at the order-date rate.
+    columns:
+      - name: line_id
+        data_tests: [unique, not_null]
+      - name: eur_per_unit
+        description: Every order date must have a rate; a gap would silently drop sales.
+        data_tests: [not_null]

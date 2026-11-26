@@ -4,3 +4,8 @@ __pycache__/
 *.pyc
 .env
 *.db
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+*.duckdb
+*.duckdb.wal

@@ -1,0 +1,8 @@
+# Local DuckDB file; no server or credentials needed.
+joindata_orders:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: joindata_orders.duckdb
+      threads: 4

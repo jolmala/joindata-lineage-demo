@@ -22,3 +22,34 @@ jobs:
         with:
           name: demo-report
           path: out/
+
+  dbt:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "dbt-duckdb>=1.8,<2"
+      - name: Seeds are reproducible
+        run: python generate_seeds.py && git diff --exit-code seeds/
+      - name: Build (seeds, models, snapshot, tests)
+        run: dbt build --profiles-dir .
+      - name: Second run loads only recent orders (incremental)
+        run: dbt run --profiles-dir . --select fct_order_lines
+      - name: Answer the example question
+        run: |
+          pip install duckdb
+          python -c "import duckdb; print(duckdb.connect('joindata_orders.duckdb').sql(open('queries/top_drill_countries.sql').read().split(chr(10),1)[1]))"
+      - run: dbt docs generate --profiles-dir .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dbt-docs
+          path: |
+            dbt/target/index.html
+            dbt/target/catalog.json
+            dbt/target/manifest.json
+            dbt/target/run_results.json
