@@ -1,3 +1,4 @@
+-- Products with their group, for slicing sales by product group.
 select
     p.product_id,
     p.product_name,

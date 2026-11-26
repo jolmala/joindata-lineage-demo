@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: erp
+    description: >
+      Raw extracts from the fictional wholesaler's ERP, landed as-is. In this demo the
+      landing step is `dbt seed`; in a real platform it would be an ingestion pipeline.
+    schema: main
+    tables:
+      - name: raw_countries
+        description: Country list maintained by sales operations.
+      - name: raw_product_groups
+        description: Product group codes.
+      - name: raw_products
+        description: Product master.
+      - name: raw_customers
+        description: Customer master; one row per customer, overwritten on change.
+      - name: raw_orders
+        description: Order headers, landed daily.
+        config:
+          loaded_at_field: "cast(order_date as timestamp)"
+          freshness:
+            warn_after: {count: 45, period: day}
+      - name: raw_order_lines
+        description: Order lines, landed daily with the headers.
+      - name: raw_fx_rates
+        description: Daily currency rates from the treasury system.

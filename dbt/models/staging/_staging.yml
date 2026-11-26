@@ -1,65 +1,119 @@
 version: 2
 
+# Staging: one model per source table. Rename, cast and standardise only; no joins, no business rules.
+
 models:
   - name: stg_countries
-    description: Countries with ISO 3166-1 alpha-2 codes and sales region.
+    description: Countries with ISO 3166-1 alpha-2 codes and the sales region each belongs to.
     columns:
       - name: country_code
-        description: ISO 3166-1 alpha-2 country code.
+        description: ISO 3166-1 alpha-2 country code, e.g. FI.
         data_tests: [unique, not_null]
+      - name: country_name
+        description: Country name in English.
+      - name: region
+        description: Sales region (Nordics, Baltics, Western Europe, North America).
+
   - name: stg_product_groups
+    description: Product groups used for reporting.
     columns:
       - name: group_code
-        description: "Product group code, e.g. POR = drills."
+        description: Product group code, e.g. POR = drills, SAH = saws, HIO = grinders.
         data_tests: [unique, not_null]
+      - name: group_name
+        description: Product group name in English.
+
   - name: stg_products
+    description: Products; one row per product.
     columns:
       - name: product_id
+        description: Product identifier from the ERP.
         data_tests: [unique, not_null]
+      - name: product_name
+        description: Product name.
       - name: group_code
+        description: Product group the product belongs to.
         data_tests:
           - relationships:
               arguments:
                 to: ref('stg_product_groups')
                 field: group_code
+      - name: unit
+        description: Sales unit (pcs or box).
+
   - name: stg_customers
+    description: Customers; one row per customer, current state only (history is in snap_customers).
     columns:
       - name: customer_id
+        description: Customer identifier from the ERP.
         data_tests: [unique, not_null]
-      - name: email
-        description: Buyer contact e-mail (synthetic).
-        meta:
-          sensitivity: personal_data
+      - name: customer_name
+        description: Customer company name.
       - name: country_code
+        description: Customer's home country; decides the order currency.
         data_tests:
           - relationships:
               arguments:
                 to: ref('stg_countries')
                 field: country_code
+      - name: email
+        description: Buyer contact e-mail (synthetic). Personal data; not exposed in the marts.
+        meta:
+          sensitivity: personal_data
+      - name: updated_at
+        description: When the customer row last changed; drives the snapshot.
+
   - name: stg_orders
+    description: Order headers; one row per order.
     columns:
       - name: order_id
+        description: Order identifier from the ERP.
         data_tests: [unique, not_null]
-      - name: status
-        description: "T = delivered, A = open, P = cancelled."
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: ["T", "A", "P"]
+      - name: customer_id
+        description: Ordering customer.
+      - name: order_date
+        description: Date the order was placed; also the date of the currency rate used.
       - name: currency
+        description: ISO 4217 currency of the order.
         data_tests:
           - accepted_values:
               arguments:
                 values: ["EUR", "SEK", "USD"]
+      - name: status
+        description: "T = delivered, A = open, P = cancelled. Only T counts as sales."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["T", "A", "P"]
+
   - name: stg_order_lines
+    description: Order lines; one row per product on an order.
     columns:
       - name: line_id
+        description: Order line identifier.
         data_tests: [unique, not_null]
       - name: order_id
+        description: Order the line belongs to.
         data_tests:
           - relationships:
               arguments:
                 to: ref('stg_orders')
                 field: order_id
+      - name: product_id
+        description: Product on the line. May refer to an unknown product (see fct_order_lines).
+      - name: quantity
+        description: Quantity in the product's sales unit.
+      - name: unit_price
+        description: Unit price in the order currency, excluding VAT.
+      - name: line_amount
+        description: quantity × unit_price, in the order currency, excluding VAT.
+
   - name: stg_fx_rates
-    description: Daily rates; eur_per_unit = euros for one unit of the currency.
+    description: Daily currency rates.
+    columns:
+      - name: currency
+        description: ISO 4217 currency code.
+      - name: rate_date
+        description: Date the rate applies to.
+      - name: eur_per_unit
+        description: Euros for one unit of the currency (EUR = 1).

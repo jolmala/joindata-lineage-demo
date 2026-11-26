@@ -1,23 +1,50 @@
 version: 2
 
+# Marts: what reports, Genie spaces and other consumers read. Descriptions here are the
+# metadata a natural-language query layer uses, so they say what the numbers mean.
+
 models:
   - name: dim_country
+    description: Countries and their sales regions.
     columns:
       - name: country_code
+        description: ISO 3166-1 alpha-2 country code.
         data_tests: [unique, not_null]
+
   - name: dim_customer
+    description: Customers without personal data (e-mail is left out on purpose).
     columns:
       - name: customer_id
+        description: Customer identifier.
         data_tests: [unique, not_null]
+      - name: country_code
+        description: Customer's home country.
+
   - name: dim_product
+    description: Products with their product group.
     columns:
       - name: product_id
+        description: Product identifier.
         data_tests: [unique, not_null]
+      - name: group_code
+        description: Product group code; POR = drills.
+      - name: group_name
+        description: Product group name.
+
   - name: fct_order_lines
-    description: One row per order line. Grain = line_id.
+    description: >
+      One row per order line (grain = line_id), all statuses. Incremental: later runs reload
+      orders from the last 7 days so that late status changes are picked up.
     columns:
       - name: line_id
+        description: Order line identifier.
         data_tests: [unique, not_null]
+      - name: status
+        description: "T = delivered, A = open, P = cancelled."
+      - name: quantity
+        description: Quantity in the product's sales unit.
+      - name: line_amount_eur
+        description: Line amount in euros at the order-date rate, excluding VAT.
       - name: product_id
         description: >
           Planted problem: four lines refer to product 999, which does not exist.
@@ -30,14 +57,16 @@ models:
               config:
                 severity: warn
       - name: customer_id
+        description: Ordering customer.
         data_tests:
           - relationships:
               arguments:
                 to: ref('dim_customer')
                 field: customer_id
+
   - name: mart_sales_by_country
     description: >
-      Sales by country. Sales = delivered orders (status T), excluding VAT,
+      Sales by country, one row per country. Sales = delivered orders (status T), excluding VAT,
       converted to euros at the rate of the order date.
     meta:
       owner: finance
@@ -48,10 +77,15 @@ models:
         - "Missä porakoneita on myyty eniten kappaleina ja euroina?"
     columns:
       - name: country_code
+        description: ISO 3166-1 alpha-2 country code.
         data_tests: [unique, not_null]
+      - name: delivered_orders
+        description: Number of delivered orders.
+      - name: units
+        description: Units delivered, all products.
       - name: sales_eur
         description: Delivered sales in euros, excluding VAT.
       - name: drill_units
-        description: Units sold in product group POR (drills).
+        description: Units delivered in product group POR (drills).
       - name: drill_sales_eur
-        description: Drill sales in euros.
+        description: Drill sales in euros, excluding VAT.

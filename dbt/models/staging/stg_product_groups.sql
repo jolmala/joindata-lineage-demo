@@ -1,4 +1,5 @@
+-- Product groups, as landed.
 select
     group_code,
     group_name
-from {{ ref('raw_product_groups') }}
+from {{ source('erp', 'raw_product_groups') }}

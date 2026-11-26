@@ -1,11 +1,18 @@
 version: 2
 
+# Intermediate: joins and business rules that several marts reuse.
+
 models:
   - name: int_order_lines_eur
-    description: Order lines joined to orders, with the amount in euros at the order-date rate.
+    description: >
+      Order lines joined to their order, with the line amount converted to euros at the
+      rate of the order date. This is the single place where the currency rule lives.
     columns:
       - name: line_id
+        description: Order line identifier.
         data_tests: [unique, not_null]
       - name: eur_per_unit
-        description: Every order date must have a rate; a gap would silently drop sales.
+        description: Rate used for the conversion. Every order date must have a rate; a gap would silently drop sales.
         data_tests: [not_null]
+      - name: line_amount_eur
+        description: Line amount in euros, excluding VAT, rounded to cents.

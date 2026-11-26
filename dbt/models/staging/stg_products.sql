@@ -1,6 +1,7 @@
+-- Products, as landed.
 select
     product_id,
     product_name,
     group_code,
     unit
-from {{ ref('raw_products') }}
+from {{ source('erp', 'raw_products') }}

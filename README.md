@@ -37,6 +37,7 @@ the pieces that make such an answer trustworthy:
 | Piece | Where |
 | --- | --- |
 | Layers: staging → intermediate → marts | `dbt/models/` |
+| Sources with a freshness check on the raw orders | `dbt/models/staging/_sources.yml` |
 | Tests: unique, not_null, relationships, accepted_values | `_staging.yml`, `_intermediate.yml`, `_marts.yml` |
 | Reconciliation test: the mart total equals the fact table, to the cent | `dbt/tests/assert_mart_reconciles_to_fact.sql` |
 | Currency rule written down once: euros at the order-date rate | `int_order_lines_eur.sql`, mart description |
@@ -51,8 +52,11 @@ Run it (Python 3.10+):
 pip install "dbt-duckdb>=1.10"
 cd dbt
 python generate_seeds.py          # optional: the CSVs are already in seeds/
-dbt build --profiles-dir .        # seeds, models, snapshot and tests
+dbt seed --profiles-dir .         # land the raw CSVs (stands in for ingestion)
+dbt build --profiles-dir . --exclude "resource_type:seed"
 ```
+
+See `dbt/README.md` for the layers and the decisions written down in the project.
 
 The **dbt** job in GitHub Actions runs the same steps, prints the answer and uploads the dbt documentation
 as the **dbt-docs** artifact. Expected answer, delivered orders in euros:

@@ -36,8 +36,12 @@ jobs:
       - run: pip install "dbt-duckdb>=1.10,<2"
       - name: Seeds are reproducible
         run: python generate_seeds.py && git diff --exit-code seeds/
-      - name: Build (seeds, models, snapshot, tests)
-        run: dbt build --profiles-dir .
+      - name: Land the raw data (stands in for ingestion)
+        run: dbt seed --profiles-dir .
+      - name: Source freshness
+        run: dbt source freshness --profiles-dir .
+      - name: Build (models, snapshot, tests)
+        run: dbt build --profiles-dir . --exclude "resource_type:seed"
       - name: Second run loads only recent orders (incremental)
         run: dbt run --profiles-dir . --select fct_order_lines
       - name: Answer the example question
