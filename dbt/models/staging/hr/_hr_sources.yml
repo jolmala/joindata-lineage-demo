@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: hris
+    description: >
+      Raw tables from the fictional HR system, landed as-is. These are the tables the PowerCenter
+      mapping m_LOAD_DIM_EMPLOYEE reads (HR_EMPLOYEE as its source, HR_DEPARTMENT through a lookup).
+    schema: main
+    tables:
+      - name: raw_hr_employees
+        description: Employee master, HRIS.HR_EMPLOYEE.
+      - name: raw_hr_departments
+        description: Departments and cost centres, HRIS.HR_DEPARTMENT. A department can have several rows over time.
+
+  - name: legacy_dw
+    description: >
+      The old warehouse's target table, unloaded for the same reporting date. Used only to compare
+      the new model with the old load during the parallel run; nothing downstream reads it.
+    schema: main
+    tables:
+      - name: legacy_dim_employee
+        description: DIM_EMPLOYEE as loaded by PowerCenter for $$AS_OF_DATE = 2026-10-31.

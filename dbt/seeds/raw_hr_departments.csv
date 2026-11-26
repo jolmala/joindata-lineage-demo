@@ -1,0 +1,11 @@
+dept_code,dept_name,cost_center,active_flag,valid_from
+FIN,Finance,1100,Y,2019-01-01
+HRM,Human Resources,1200,Y,2019-01-01
+ITD,IT,1300,Y,2019-01-01
+SAL,Sales and Marketing,2100,N,2019-01-01
+SAL,Sales,2100,Y,2023-03-01
+MKT,Marketing,2200,Y,2023-03-01
+OPS,Operations,3100,Y,2019-01-01
+OPS,Operations and Quality,3150,Y,2026-09-01
+LOG,Logistics,3200,Y,2019-01-01
+RND,Research and Development,4100,Y,2021-06-01

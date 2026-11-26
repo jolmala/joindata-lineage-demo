@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: dim_employee
+    description: >
+      Employees of the fictional company as of the reporting date (var as_of_date), one row per
+      employee. External contractors are not included. Replaces DIM_EMPLOYEE loaded by the
+      PowerCenter mapping m_LOAD_DIM_EMPLOYEE; the parallel-run test
+      assert_dim_employee_matches_legacy compares the two row by row.
+    meta:
+      owner: HR data owner
+      replaces: "PowerCenter HR_DW.m_LOAD_DIM_EMPLOYEE -> DIM_EMPLOYEE"
+      synonyms_fi: [henkilöstö, työntekijät, henkilöstörekisteri]
+      synonyms_en: [employees, staff, headcount]
+      example_questions:
+        - "How many active employees does each department have?"
+        - "Kuinka moni työntekijä on osa-aikainen kustannuspaikoittain?"
+    columns:
+      - name: emp_id
+        description: Employee number; the key. The legacy surrogate key EMP_KEY is not carried over (D6).
+        data_tests: [unique, not_null]
+      - name: dept_name
+        description: Department name; UNKNOWN when the employee's department has no row.
+      - name: cost_center
+        description: Cost centre; 9999 when the department is unknown.
+      - name: is_active
+        description: Y when the employee has not left by the reporting date.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Y", "N"]
+      - name: fte_band
+        description: FULL = FTE 1.00 or more, PART = 0.50-0.99, SMALL = under 0.50 or not recorded.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["FULL", "PART", "SMALL"]

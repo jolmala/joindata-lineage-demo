@@ -1,0 +1,56 @@
+version: 2
+
+# Staging for the HR migration example. Warnings here are known data problems in the source;
+# each one has a decision in migration/m_LOAD_DIM_EMPLOYEE.md (D1-D4).
+
+models:
+  - name: stg_hr_employees
+    description: >
+      Employees with names and department codes trimmed and the code upper-cased.
+      Birth date and e-mail are not selected: the legacy target never carried them and no
+      consumer needs them (data minimisation).
+    columns:
+      - name: emp_id
+        description: Employee number from the HR system.
+        data_tests: [unique, not_null]
+      - name: dept_code
+        description: Department code, trimmed and upper-case (EXP_DERIVE.DEPT_CODE).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('int_hr_departments_current')
+                field: dept_code
+              config:
+                severity: warn  # D2: three employees in QAX, which has no department row
+      - name: employment_type
+        description: P = permanent, F = fixed-term, X = external contractor.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn  # D1: two employees with no type; the legacy filter drops them
+          - accepted_values:
+              arguments:
+                values: ["P", "F", "X"]
+      - name: fte
+        description: Full-time equivalent, 1.00 = full time.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn  # D4: three employees with no FTE
+
+  - name: stg_hr_departments
+    description: Department rows as they are in the HR system, including inactive and superseded rows.
+    columns:
+      - name: dept_code
+        description: Department code.
+        data_tests:
+          - unique:
+              config:
+                where: "active_flag = 'Y'"
+                severity: warn  # D3: OPS has two active rows after the 2026 reorganisation
+      - name: active_flag
+        description: Y = row in use.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["Y", "N"]

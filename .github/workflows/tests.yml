@@ -35,7 +35,7 @@ jobs:
           python-version: "3.12"
       - run: pip install "dbt-duckdb>=1.10,<2"
       - name: Seeds are reproducible
-        run: python generate_seeds.py && git diff --exit-code seeds/
+        run: python generate_seeds.py && python generate_hr_seeds.py && git diff --exit-code seeds/
       - name: Land the raw data (stands in for ingestion)
         run: dbt seed --profiles-dir .
       - name: Source freshness
@@ -48,6 +48,9 @@ jobs:
         run: |
           pip install duckdb
           python -c "import duckdb; print(duckdb.connect('joindata_orders.duckdb').sql(open('queries/top_drill_countries.sql').read().split(chr(10),1)[1]))"
+      - name: HR migration, active headcount in dbt and in the legacy table
+        run: |
+          python -c "import duckdb; print(duckdb.connect('joindata_orders.duckdb').sql(open('queries/hr_parallel_run.sql').read().split(chr(10),1)[1]))"
       - run: dbt docs generate --profiles-dir .
       - uses: actions/upload-artifact@v4
         with:

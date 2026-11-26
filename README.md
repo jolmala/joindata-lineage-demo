@@ -1,10 +1,11 @@
 # Data platform migration and lineage demo
 
-Three pieces of work that come up in every data platform migration, each runnable on its own:
+Four pieces of work that come up in every data platform migration, each runnable on its own:
 
 - **Lineage and reconciliation.** Traces every figure of a regulatory report back to its source system, through the storage layers of an Azure data platform, and reconciles reported values against the warehouse.
 - **Informatica PowerCenter analysis.** Reads a repository export and shows mappings, lineage and objects that no workflow runs, the starting point for planning a migration.
 - **dbt example.** A layered dbt project with tests, a reconciliation check, an incremental fact table and metadata for natural-language querying.
+- **Migration example.** One PowerCenter HR mapping moved to dbt: every rule accounted for, the data problems decided by a person, and the result compared row by row with the old load.
 
 All data is synthetic. Nothing here comes from a client.
 
@@ -26,7 +27,7 @@ the code style is checked with ruff (settings in `pyproject.toml`).
 
 ```
 python demo.py              # writes out/report.html and out/summary.json
-python -m pytest -q         # 6 checks
+python -m pytest -q         # 9 checks
 ruff check . && ruff format --check .
 ```
 
@@ -74,6 +75,26 @@ as the **dbt-docs** artifact. Expected answer, delivered orders in euros:
 | United States | 482 | 81 299 | 210 568 |
 | Estonia | 176 | 29 274 | 76 804 |
 
+## Migration example: a PowerCenter mapping in dbt
+
+A synthetic HR mapping, `m_LOAD_DIM_EMPLOYEE`, loads an employee dimension with a filter, two
+expressions, a department lookup, a sequence key and insert-or-update. The example moves it to dbt and
+shows how to know the move is right:
+
+| Step | Where |
+| --- | --- |
+| The export: mapping, workflow, parameter, and an old unscheduled copy | `samples/powercenter/HR_DEMO_export.xml` |
+| The 14 rules read from the export (`Mapping.rules`) | `powercenter/parser.py` |
+| Conversion record: each rule, its dbt line, and decisions D1–D6 with who decides | [`migration/m_LOAD_DIM_EMPLOYEE.md`](migration/m_LOAD_DIM_EMPLOYEE.md) |
+| The dbt models, each rule commented with the mapping object it replaces | `dbt/models/*/hr/` |
+| Data problems found by tests and left as warnings: missing types and FTEs, an unknown department, two active rows for one department | `dbt/models/staging/hr/_hr_staging.yml` |
+| Parallel run: the model against the legacy table, every business column, both directions | `dbt/tests/assert_dim_employee_matches_legacy.sql` |
+| Checks that no rule and no decision is left out | `tests/test_migration.py` |
+
+The rule followed throughout: same result first, improvements after the cutover. In CI the parallel run
+finds no differences in 138 rows. The legacy table is simulated here; in a real migration it is an unload
+of the old warehouse table for the same reporting date.
+
 ## From the full toolkit (screenshots)
 
 The repository holds a reduced, open version of the tools. Two views from the full toolkit, both on synthetic data; the user interface is in Finnish.
@@ -91,11 +112,12 @@ The repository holds a reduced, open version of the tools. Two views from the fu
 ```
 lineage/graph.py        parsers for ADF, Unity Catalog lineage, SQL views, report mapping; the lineage graph
 lineage/sample.py       synthetic extracts for a fictional insurer's own-funds report
-powercenter/parser.py   minimal PowerCenter XML export reader
-samples/powercenter/    synthetic repository export
+powercenter/parser.py   minimal PowerCenter XML export reader: tables, rules, workflows
+samples/powercenter/    synthetic repository exports (a bank DW and an HR mapping)
+migration/              conversion record for the HR mapping
 demo.py                 runs both parts and writes the HTML report
 pyproject.toml          pytest and ruff settings
-dbt/                    dbt project: synthetic orders, models, tests, snapshot
+dbt/                    dbt project: synthetic orders and the HR migration, models, tests, snapshot
 tests/                  checks on parsing, column-level tracing, breaks and reconciliation
 docs/                   screenshots, AI working method, agent governance model
 ```

@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: int_hr_departments_current
+    description: >
+      The department row an employee is reported under: of the active rows, the one with the
+      latest valid_from. This is the rule the legacy lookup applied (decision D3).
+    columns:
+      - name: dept_code
+        description: Department code.
+        data_tests: [unique, not_null]
+      - name: cost_center
+        description: Cost centre of the department.
+        data_tests: [not_null]

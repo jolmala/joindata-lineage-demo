@@ -10,6 +10,9 @@ snapshot-paths: ["snapshots"]
 macro-paths: ["macros"]
 clean-targets: ["target", "dbt_packages"]
 
+vars:
+  as_of_date: "2026-10-31"  # reporting date of the HR example; $$AS_OF_DATE in PowerCenter
+
 models:
   joindata_orders:
     staging:
@@ -31,3 +34,23 @@ seeds:
       +column_types:
         rate_date: date
         eur_per_unit: double
+    raw_hr_employees:
+      +column_types:
+        emp_id: integer
+        first_name: varchar
+        dept_code: varchar
+        employment_type: varchar
+        hire_date: date
+        term_date: date
+        fte: decimal(4,2)
+    raw_hr_departments:
+      +column_types:
+        cost_center: varchar
+        valid_from: date
+    legacy_dim_employee:
+      +column_types:
+        emp_id: integer
+        cost_center: varchar
+        hire_date: date
+        term_date: date
+        load_ts: timestamp
