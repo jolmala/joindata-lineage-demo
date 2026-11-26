@@ -119,6 +119,10 @@ The repository holds a reduced, open version of the tools. Five views from the f
 
 ![PowerCenter workflow mapped to a Databricks job](docs/pc-to-databricks-job.png)
 
+The same job deployed to a Databricks Free Edition workspace with `databricks bundle deploy`: the worklet runs as its own job, the session as dbt, and the archive command waits as a placeholder. The Router job from the previous example was run there too, and its parity tests passed.
+
+![The generated job deployed in Databricks](docs/databricks-job-deployed.png)
+
 ## Layout
 
 ```
