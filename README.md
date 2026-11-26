@@ -70,6 +70,18 @@ as the **dbt-docs** artifact. Expected answer, delivered orders in euros:
 | United States | 482 | 81 299 | 210 568 |
 | Estonia | 176 | 29 274 | 76 804 |
 
+## From the full toolkit (screenshots)
+
+The repository holds a reduced, open version of the tools. Two views from the full toolkit, both on synthetic data; the user interface is in Finnish.
+
+**PowerCenter dependency map.** Built from a repository export: mappings are coloured by complexity class (A–D), dashed outlines mark mappings that no session runs, dashed lines are lookup and SQL dependencies, and red dots mark findings. The chain runs from source tables through staging and the fact table to the LCR report.
+
+![PowerCenter dependency map from a synthetic export](docs/dependency-map.png)
+
+**Metadata editor.** Proposals made by machine (red, with confidence and evidence) wait for a person to accept them. The chosen role limits what can be approved: relationships by the data modeller, descriptions by the data steward, sensitivity by data protection and currency rules by finance. Every change is logged, and the result is exported as YAML for the semantic layer.
+
+![Metadata editor: a machine-proposed relationship awaiting approval](docs/metadata-editor.png)
+
 ## Layout
 
 ```
