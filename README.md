@@ -123,6 +123,16 @@ The same job deployed to a Databricks Free Edition workspace with `databricks bu
 
 ![The generated job deployed in Databricks](docs/databricks-job-deployed.png)
 
+**The whole chain running in Databricks.** The PowerCenter shell commands became notebooks: a Python/PySpark check of the incoming extract (done marker, header, row count, unique key) replaces `check_hris_extract.sh`, and an archiving notebook replaces `archive_hr_files.sh` (move to an archive volume with a retention period; gzip and sftp are no longer needed). The nightly job then runs end to end on serverless compute.
+
+![Nightly job run: worklet job, dbt and the archiving notebook all succeeded](docs/databricks-nightly-run.png)
+
+**Parity by column, not just by count.** A PySpark notebook compares the legacy table with the new model by key and by column, and logs every comparison to a table. Before decision D3, `dim_employee` had 38 extra rows that differed only in `dept_name` and `cost_center`: the department lookup matched two active rows. After D3 (latest valid department row) the tables match. The summary is plain SQL, so the same query works in the SQL editor or a dashboard.
+
+![Parity check before decision D3: 38 extra rows, differing in two columns](docs/databricks-parity-summary.png)
+
+![Parity log in SQL: before D3 the tables differ, after D3 they match](docs/databricks-parity-sql.png)
+
 ## Layout
 
 ```
