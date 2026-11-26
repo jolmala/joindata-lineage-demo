@@ -97,7 +97,7 @@ of the old warehouse table for the same reporting date.
 
 ## From the full toolkit (screenshots)
 
-The repository holds a reduced, open version of the tools. Six views from the full toolkit, all on synthetic data; the toolkit's own user interface is in Finnish.
+The repository holds a reduced, open version of the tools. Views from the full toolkit and from running it in Databricks and Power BI, all on synthetic data; the toolkit's own user interface is in Finnish.
 
 **PowerCenter dependency map.** Built from a repository export: mappings are coloured by complexity class (A–D), dashed outlines mark mappings that no session runs, dashed lines are lookup and SQL dependencies, and red dots mark findings. The chain runs from source tables through staging and the fact table to the LCR report.
 
