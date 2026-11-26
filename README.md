@@ -1,6 +1,10 @@
-# Regulatory lineage demo
+# Data platform migration and lineage demo
 
-Traces every figure of a regulatory report back to its source system, through the storage layers of an Azure data platform, and reconciles reported values against the warehouse. A second part reads an Informatica PowerCenter repository export and shows mappings, lineage and objects that no workflow runs.
+Three pieces of work that come up in every data platform migration, each runnable on its own:
+
+- **Lineage and reconciliation.** Traces every figure of a regulatory report back to its source system, through the storage layers of an Azure data platform, and reconciles reported values against the warehouse.
+- **Informatica PowerCenter analysis.** Reads a repository export and shows mappings, lineage and objects that no workflow runs, the starting point for planning a migration.
+- **dbt example.** A layered dbt project with tests, a reconciliation check, an incremental fact table and metadata for natural-language querying.
 
 All data is synthetic. Nothing here comes from a client.
 
@@ -121,6 +125,6 @@ The same discipline applies to agents that run unattended. [docs/agent-governanc
 
 ## Author
 
-Jani Olmala, [Joindata Oy](https://www.joindata.fi), Oulu, Finland · [LinkedIn](https://www.linkedin.com/in/jani-olmala-0a02788/)
+Jani Olmala, Joindata Oy, Oulu, Finland · [LinkedIn](https://www.linkedin.com/in/jani-olmala-0a02788/)
 
 © 2026 Joindata Oy. No open-source licence is granted; you are welcome to read and run the code to evaluate it.
