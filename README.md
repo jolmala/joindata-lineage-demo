@@ -97,7 +97,7 @@ of the old warehouse table for the same reporting date.
 
 ## From the full toolkit (screenshots)
 
-The repository holds a reduced, open version of the tools. Five views from the full toolkit, all on synthetic data; the toolkit's own user interface is in Finnish.
+The repository holds a reduced, open version of the tools. Six views from the full toolkit, all on synthetic data; the toolkit's own user interface is in Finnish.
 
 **PowerCenter dependency map.** Built from a repository export: mappings are coloured by complexity class (A–D), dashed outlines mark mappings that no session runs, dashed lines are lookup and SQL dependencies, and red dots mark findings. The chain runs from source tables through staging and the fact table to the LCR report.
 
@@ -132,6 +132,10 @@ The same job deployed to a Databricks Free Edition workspace with `databricks bu
 ![Parity check before decision D3: 38 extra rows, differing in two columns](docs/databricks-parity-summary.png)
 
 ![Parity log in SQL: before D3 the tables differ, after D3 they match](docs/databricks-parity-sql.png)
+
+**The report on top, reconciled too.** A Power BI semantic model is generated from the dbt descriptions (TMDL: the legacy and new tables, a shared department table and the measures), and the page is built by hand in Power BI Desktop. Headcount and FTE match the legacy figures in every department. The second table shows what a report on the unreviewed draft would have shown: 176 employee rows instead of 138, all of the extra rows in one department, the one with two active department rows.
+
+![Power BI: headcount and FTE by department, legacy and new side by side](docs/powerbi-hr-reconciliation.png)
 
 ## Layout
 
