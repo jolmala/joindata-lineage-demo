@@ -48,7 +48,7 @@ the pieces that make such an answer trustworthy:
 Run it (Python 3.10+):
 
 ```
-pip install dbt-duckdb
+pip install "dbt-duckdb>=1.10"
 cd dbt
 python generate_seeds.py          # optional: the CSVs are already in seeds/
 dbt build --profiles-dir .        # seeds, models, snapshot and tests

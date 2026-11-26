@@ -24,15 +24,17 @@ models:
           Reported as a warning so the run continues and the gap is visible.
         data_tests:
           - relationships:
-              to: ref('dim_product')
-              field: product_id
+              arguments:
+                to: ref('dim_product')
+                field: product_id
               config:
                 severity: warn
       - name: customer_id
         data_tests:
           - relationships:
-              to: ref('dim_customer')
-              field: customer_id
+              arguments:
+                to: ref('dim_customer')
+                field: customer_id
   - name: mart_sales_by_country
     description: >
       Sales by country. Sales = delivered orders (status T), excluding VAT,

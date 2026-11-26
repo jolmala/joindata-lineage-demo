@@ -19,8 +19,9 @@ models:
       - name: group_code
         data_tests:
           - relationships:
-              to: ref('stg_product_groups')
-              field: group_code
+              arguments:
+                to: ref('stg_product_groups')
+                field: group_code
   - name: stg_customers
     columns:
       - name: customer_id
@@ -32,8 +33,9 @@ models:
       - name: country_code
         data_tests:
           - relationships:
-              to: ref('stg_countries')
-              field: country_code
+              arguments:
+                to: ref('stg_countries')
+                field: country_code
   - name: stg_orders
     columns:
       - name: order_id
@@ -42,11 +44,13 @@ models:
         description: "T = delivered, A = open, P = cancelled."
         data_tests:
           - accepted_values:
-              values: ["T", "A", "P"]
+              arguments:
+                values: ["T", "A", "P"]
       - name: currency
         data_tests:
           - accepted_values:
-              values: ["EUR", "SEK", "USD"]
+              arguments:
+                values: ["EUR", "SEK", "USD"]
   - name: stg_order_lines
     columns:
       - name: line_id
@@ -54,7 +58,8 @@ models:
       - name: order_id
         data_tests:
           - relationships:
-              to: ref('stg_orders')
-              field: order_id
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
   - name: stg_fx_rates
     description: Daily rates; eur_per_unit = euros for one unit of the currency.
