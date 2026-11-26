@@ -97,7 +97,7 @@ of the old warehouse table for the same reporting date.
 
 ## From the full toolkit (screenshots)
 
-The repository holds a reduced, open version of the tools. Two views from the full toolkit, both on synthetic data; the user interface is in Finnish.
+The repository holds a reduced, open version of the tools. Five views from the full toolkit, all on synthetic data; the toolkit's own user interface is in Finnish.
 
 **PowerCenter dependency map.** Built from a repository export: mappings are coloured by complexity class (A–D), dashed outlines mark mappings that no session runs, dashed lines are lookup and SQL dependencies, and red dots mark findings. The chain runs from source tables through staging and the fact table to the LCR report.
 
@@ -106,6 +106,18 @@ The repository holds a reduced, open version of the tools. Two views from the fu
 **Metadata editor.** Proposals made by machine (red, with confidence and evidence) wait for a person to accept them. The chosen role limits what can be approved: relationships by the data modeller, descriptions by the data steward, sensitivity by data protection and currency rules by finance. Every change is logged, and the result is exported as YAML for the semantic layer.
 
 ![Metadata editor: a machine-proposed relationship awaiting approval](docs/metadata-editor.png)
+
+**Run map.** Built from the export together with parameter files, shell scripts, crontab and Workflow Monitor logs: cron → script → workflow → worklet → session → mapping, with parameter overrides and the files and tables that commands touch. Selecting a node highlights its chain and shows its settings, connections, the latest run from the logs and its findings (here a missing parameter file, a hard-coded password in a script and a writer thread that is the bottleneck).
+
+![Run map: chain from crontab to mapping, with the latest run from the session log](docs/run-map.png)
+
+**From a Router mapping to dbt.** Each target of the mapping gets its own dbt model; the Router group's condition becomes the `where` clause, and the default group is "no other group matched". Rows the old Update Strategy rejected are left out, and the session log's reject count is the cross-check. Every draft is compared row by row with the legacy table on SQLite, DuckDB and Databricks.
+
+![Router mapping translated to three dbt models, with parity results](docs/router-to-dbt.png)
+
+**From a workflow to a Databricks job.** Worklets become jobs of their own, sessions become dbt tasks, links become dependencies, the Event-Wait becomes a file-arrival trigger and the failure e-mail becomes a job notification. Commands get placeholders, and anything that needs a decision is listed instead of guessed.
+
+![PowerCenter workflow mapped to a Databricks job](docs/pc-to-databricks-job.png)
 
 ## Layout
 
